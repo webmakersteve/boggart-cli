@@ -1,0 +1,46 @@
+#!/usr/bin/env node
+// This was all adapted essentially word for word from the Grunt-CLI library
+
+'use strict';
+
+process.title = 'boggart';
+
+// Especially badass external libs.
+var findup = require('findup-sync');
+var resolve = require('resolve').sync;
+
+// Internal libs.
+var options = require('../lib/cli').options;
+var completion = require('../lib/completion');
+var info = require('../lib/info');
+var path = require('path');
+
+
+var basedir = process.cwd();
+var boggartpath;
+
+// Do stuff based on CLI options.
+if ('completion' in options) {
+  completion.print(options.completion);
+} else if (options.version) {
+  info.version();
+} else if (options.boggartfile) { //Note: if both `boggartfile` and `base` are set, use `boggartfile`
+  basedir = path.resolve(path.dirname(options.boggartfile));
+} else if (options.base) {
+  basedir = path.resolve(options.base);
+}
+
+try {
+  boggartpath = resolve('boggart', {basedir: basedir});
+} catch (ex) {
+  boggartpath = findup('lib/boggart.js');
+  // No grunt install found!
+  if (!boggartpath) {
+    if (options.version) { process.exit(); }
+    if (options.help) { info.help(); }
+    info.fatal('Unable to find local boggart.', 99);
+  }
+}
+
+// Everything looks good. Require local grunt and run it.
+require(boggartpath).cli();
